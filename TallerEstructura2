@@ -1,0 +1,322 @@
+/******************************************************************************
+Cecilia Gonzalez Alcayaga
+*******************************************************************************/
+
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <ctime>
+#include <cstdlib>
+
+class Jugador {
+public:
+    virtual char obtenerSimbolo() const = 0;
+    virtual void realizarMovimiento(char tablero[6][7]) = 0;
+};
+
+class JugadorUsuario : public Jugador {
+public:
+    char obtenerSimbolo() const override {
+        return 'X';
+    }
+
+    void realizarMovimiento(char tablero[6][7]) override {
+        int columna;
+        do {
+            std::cout << "Ingresa tu movimiento (columna 1-7): ";
+            std::cin >> columna;
+        } while (columna < 1 || columna > 7 || tablero[0][columna - 1] != ' ');
+
+        // Encontrar la primera fila disponible en la columna
+        int fila = 5;
+        while (fila >= 0 && tablero[fila][columna - 1] != ' ') {
+            fila--;
+        }
+
+        tablero[fila][columna - 1] = obtenerSimbolo();
+    }
+};
+
+class JugadorMaquina : public Jugador {
+public:
+    char obtenerSimbolo() const override {
+        return 'O';
+    }
+
+    void realizarMovimiento(char tablero[6][7]) override {
+        // Lógica para el movimiento de la máquina (puedes implementar la dificultad aquí)
+        // Por ahora, un movimiento aleatorio
+        int columna;
+        do {
+            columna = rand() % 7;
+        } while (tablero[0][columna] != ' ');
+
+        // Encontrar la primera fila disponible en la columna
+        int fila = 5;
+        while (fila >= 0 && tablero[fila][columna] != ' ') {
+            fila--;
+        }
+
+        tablero[fila][columna] = obtenerSimbolo();
+    }
+private:
+    int minimax(char tablero[6][7], int profundidad, bool esMaximizando); //AÑADIDIO
+};
+
+class JuegoConecta4 {
+private:
+    char tablero[6][7];
+    Jugador* jugador1;
+    Jugador* jugador2;
+    int puntajeJugador1;
+    int puntajeJugador2;
+    
+    bool elegirInicioPartida(){
+        int opcion;
+        std::cout << "Elige quien inicia la partida:" << std::endl;
+        std::cout << "1. Jugador" << std::endl;
+        std::cout << "2. Máquina" << std::endl;
+        std::cout << "Ingrese el numero de elección:";
+        std::cin >>opcion;
+        
+        return opcion == 1;
+    }
+
+public:
+    JuegoConecta4(Jugador* j1, Jugador* j2) : jugador1(j1), jugador2(j2), puntajeJugador1(0), puntajeJugador2(0) {
+        reiniciarTablero();
+    }
+
+    void reiniciarTablero() {
+        for (int i = 0; i < 6; ++i) {
+            for (int j = 0; j < 7; ++j) {
+                tablero[i][j] = ' ';
+            }
+        }
+    }
+
+    void imprimirTablero() const {
+        for (int i = 0; i < 6; ++i) {
+            for (int j = 0; j < 7; ++j) {
+                std::cout << tablero[i][j] << "|";
+            }
+            std::cout << std::endl;
+        }
+    }
+
+    bool hayGanador(char tablero[6][7], char jugador) const {
+        // Implementacion de funcion para verificar el ganador de forma (horizontal, vertical, diagonal)
+        // Verificacion de forma horizontal
+        for (int i = 0; i < 6; ++i) {
+            for (int j = 0; j < 4; ++j) {
+                if (tablero[i][j] == jugador &&
+                    tablero[i][j + 1] == jugador &&
+                    tablero[i][j + 2] == jugador &&
+                    tablero[i][j + 3] == jugador) {
+                    return true;
+                }
+            }
+        }
+        // Verificacion de forma vertical
+        for (int i = 0; i < 6; ++i) {
+            for (int j = 0; j < 4; ++j) {
+                if (tablero[i][j] == jugador &&
+                    tablero[i][j + 1] == jugador &&
+                    tablero[i][j + 2] == jugador &&
+                    tablero[i][j + 3] == jugador) {
+                    return true;
+                }
+            }
+        }
+        // Verificar en diagonal (de izquierda arriba a derecha abajo)
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 4; ++j) {
+                if (tablero[i][j] == jugador &&
+                    tablero[i + 1][j + 1] == jugador &&
+                    tablero[i + 2][j + 2] == jugador &&
+                    tablero[i + 3][j + 3] == jugador) {
+                    return true;
+                }
+            }
+        }
+    
+        // Verificacion en forma diagonal (de izquierda abajo a derecha arriba)
+        for (int i = 3; i < 6; ++i) {
+            for (int j = 0; j < 4; ++j) {
+                if (tablero[i][j] == jugador &&
+                    tablero[i - 1][j + 1] == jugador &&
+                    tablero[i - 2][j + 2] == jugador &&
+                    tablero[i - 3][j + 3] == jugador) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    
+    //Verificacion de tablero completo, donde no se pueden realizar mas jugadas
+    bool tableroCompleto() const {
+        for (int i = 0; i < 6; ++i) {
+            for (int j = 0; j < 7; ++j) {
+                if (tablero[i][j] == ' ') {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    //Jugada Partida Facil, la cual a la maquina se le asigna un simbolo de forma aleatoria
+    void jugarPartidaFacil() {
+        reiniciarTablero();
+
+        while (true) {
+            imprimirTablero();
+            jugador1->realizarMovimiento(tablero);
+            //revisa tablero y revisa si el jugador hizo las conexiones de los 4 simbolos
+            if (hayGanador(tablero, jugador1->obtenerSimbolo())) {
+                std::cout << "¡Ganaste!" << std::endl;
+                puntajeJugador1++;
+                break;
+            }
+            if (tableroCompleto()) {
+                std::cout << "¡Empate!" << std::endl;
+                break;
+            }
+
+            imprimirTablero();
+            std::cout << "Turno Maquina" << std::endl;
+            jugador2->realizarMovimiento(tablero);
+
+            //
+            if (hayGanador(tablero, jugador2->obtenerSimbolo())) {
+                std::cout << "¡La máquina gana!" << std::endl;
+                puntajeJugador2++;
+                break;
+            }
+            if (tableroCompleto()) {
+                std::cout << "¡Empate!" << std::endl;
+                break;
+            }
+        }
+
+        std::cout << "Puntuación: Jugador " << puntajeJugador1 << " - " << puntajeJugador2 << " Máquina" << std::endl;
+    }
+    
+    void jugarPartidaMedia() {
+        bool jugadorInicia=elegirInicioPartida();
+        reiniciarTablero();
+        while (true) {
+            if(jugadorInicia){
+                imprimirTablero();
+                jugador1->realizarMovimiento(tablero);
+                
+                if (hayGanador(tablero, jugador1->obtenerSimbolo())) {
+                    std::cout << "¡Ganaste!" << std::endl;
+                    puntajeJugador1++;
+                    break;
+                }
+                if (tableroCompleto()) {
+                    std::cout << "¡Empate!" << std::endl;
+                    break;
+                }
+                
+                imprimirTablero();
+                std::cout << "Turno Maquina" << std::endl;
+                jugador2->realizarMovimiento(tablero);
+
+                if (hayGanador(tablero, jugador2->obtenerSimbolo())) {
+                    std::cout << "¡La máquina gana!" << std::endl;
+                    puntajeJugador2++;
+                    break;
+                }
+
+                if (tableroCompleto()) {
+                    std::cout << "¡Empate!" << std::endl;
+                    break;
+                }
+                
+            } else {
+                imprimirTablero();
+                jugador2->realizarMovimiento(tablero);
+
+                if (hayGanador(tablero, jugador2->obtenerSimbolo())) {
+                    std::cout << "¡La máquina gana!" << std::endl;
+                    puntajeJugador2++;
+                    break;
+                }
+
+                if (tableroCompleto()) {
+                    std::cout << "¡Empate!" << std::endl;
+                    break;
+                }
+
+                imprimirTablero();
+                std::cout << "Turno Jugador" << std::endl;
+                jugador1->realizarMovimiento(tablero);
+
+                if (hayGanador(tablero, jugador1->obtenerSimbolo())) {
+                    std::cout << "¡Ganaste!" << std::endl;
+                    puntajeJugador1++;
+                    break;
+                }
+
+                if (tableroCompleto()) {
+                    std::cout << "¡Empate!" << std::endl;
+                    break;
+                }
+            }
+        }
+        std::cout << "Puntuación: Jugador " << puntajeJugador1 << " - " << puntajeJugador2 << " Máquina" << std::endl;
+    }
+    
+    void jugarPartidaDificil() {
+        bool jugadorInicia=elegirInicioPartida();
+        reiniciarTablero();
+        
+        std::cout << "Puntuación: Jugador " << puntajeJugador1 << " - " << puntajeJugador2 << " Máquina" << std::endl;
+    }
+    
+
+};
+
+int main() {
+    srand(static_cast<unsigned>(time(nullptr)));
+
+    
+    JugadorUsuario jugadorUsuario;
+    JugadorMaquina jugadorMaquina;
+
+    JuegoConecta4 juego(&jugadorUsuario, &jugadorMaquina);
+
+    int opcion;
+    do {
+        std::cout << "Menú:" << std::endl;
+        std::cout << "1. Jugar partida Facil" << std::endl;
+        std::cout << "2. Jugar partida Medio" << std::endl;
+        std::cout << "3. Jugar partida Dificil" << std::endl;
+        std::cout << "4. Salir" << std::endl;
+        std::cout << "Elige una opción: ";
+        std::cin >> opcion;
+
+        switch (opcion) {
+            case 1:
+                juego.jugarPartidaFacil();
+                break;
+            case 2: 
+                juego.jugarPartidaMedia();
+                break;
+            case 4:
+                std::cout << "Saliendo del programa." << std::endl;
+                break;
+            default:
+                std::cout << "Opción no válida. Intenta de nuevo." << std::endl;
+        }
+
+    } while (opcion != 4);
+    
+
+    return 0;
+}
+ 
