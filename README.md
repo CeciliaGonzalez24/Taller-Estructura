@@ -2,6 +2,8 @@
 Taller 2 de Estructura de Datos
 Cecilia Gonzalez Alcayaga
 
+
+
 Creacion de un menu, en el cual se pueda elegir el modo de dificultad para el juego, la cual consiste en el modo facil, medio y dificil.
 Realizar Movimiento
 En el modo facil, se le asigna al turno de la maquina una posicion de forma aleatoria para que coloque su simbolo.
