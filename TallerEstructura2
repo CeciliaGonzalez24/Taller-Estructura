@@ -167,7 +167,7 @@ public:
         return true;
     }
 
-    //Jugada Partida Facil, la cual a la maquina se le asigna un simbolo de forma aleatoria
+    //Creacion de funcion para las jugadas en modo facil, la cual a la maquina se le asigna un simbolo de forma aleatoria
     void jugarPartidaFacil() {
         reiniciarTablero();
 
@@ -203,7 +203,8 @@ public:
 
         std::cout << "Puntuación: Jugador " << puntajeJugador1 << " - " << puntajeJugador2 << " Máquina" << std::endl;
     }
-    
+
+//creacion de funcion para las jugadas en modo medio, el usuario puede elegir quien empieza la partida
     void jugarPartidaMedia() {
         bool jugadorInicia=elegirInicioPartida();
         reiniciarTablero();
@@ -270,7 +271,8 @@ public:
         }
         std::cout << "Puntuación: Jugador " << puntajeJugador1 << " - " << puntajeJugador2 << " Máquina" << std::endl;
     }
-    
+
+//creacion de funcion para las jugadas en modo dificil
     void jugarPartidaDificil() {
         bool jugadorInicia=elegirInicioPartida();
         reiniciarTablero();
